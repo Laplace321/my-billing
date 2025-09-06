@@ -78,6 +78,7 @@ class BankBillParser:
                     
                     for line in lines:
                         # 更灵活的正则表达式匹配
+                        # 匹配模式：日期 货币 金额 余额 交易类型 交易对方
                         pattern = r'(\d{4}-\d{2}-\d{2})\s+([A-Z]{3})\s+([-,]?\d+(?:,\d{3})*\.\d{2})\s+([-,]?\d+(?:,\d{3})*\.\d{2})\s+(.+?)\s+(.+)'
                         match = re.search(pattern, line)
                         
@@ -105,7 +106,13 @@ class BankBillParser:
                 # 将金额转换为数值类型
                 df['金额'] = pd.to_numeric(df['金额'])
                 
-                # 应用过滤逻辑
+                # 添加一个用于去重的原始日期字段，只包含日期部分
+                df['_raw_date'] = df['交易日期']
+                
+                # 将交易日期格式化为 yyyy-MM-dd hh:mm:ss 格式，填充默认时间 00:00:00
+                df['交易日期'] = df['交易日期'] + ' 00:00:00'
+                
+                # 应用过滤逻辑（去除还款记录和投资记录）
                 df = self._apply_filters(df)
                 
                 # 按日期排序

@@ -62,13 +62,21 @@ class BillDeduplicator:
                     # 检查非支付宝记录中是否有与支付宝记录匹配的转账对
                     for _, alipay_row in alipay_records.iterrows():
                         alipay_amount = alipay_row['金额']
-                        alipay_date = str(alipay_row['日期']).split(' ')[0]  # 只取日期部分
+                        # 使用原始日期进行比较（如果有_raw_date列）
+                        if '_raw_date' in alipay_row:
+                            alipay_date = alipay_row['_raw_date']
+                        else:
+                            alipay_date = str(alipay_row['日期']).split(' ')[0]  # 只取日期部分
                         
                         # 检查其他记录中是否有匹配的转账
                         other_records = agent_records[agent_records['源账户'] != '支付宝']
                         for idx, other_row in other_records.iterrows():
                             other_amount = other_row['金额']
-                            other_date = str(other_row['日期']).split(' ')[0]  # 只取日期部分
+                            # 使用原始日期进行比较（如果有_raw_date列）
+                            if '_raw_date' in other_row:
+                                other_date = other_row['_raw_date']
+                            else:
+                                other_date = str(other_row['日期']).split(' ')[0]  # 只取日期部分
                             
                             # 如果金额相同但符号相反，且日期相同，则标记为需要删除的重复记录
                             if (abs(alipay_amount + other_amount) < 0.01 and 
@@ -82,12 +90,26 @@ class BillDeduplicator:
                     matched_pairs = set()  # 记录已匹配的索引对，避免重复处理
                     for i, (idx1, row1) in enumerate(agent_records.iterrows()):
                         amount1 = row1['金额']
+                        # 使用原始日期进行比较（如果有_raw_date列）
+                        if '_raw_date' in row1:
+                            date1 = row1['_raw_date']
+                        else:
+                            date1 = str(row1['日期']).split(' ')[0]  # 只取日期部分
+                        
                         for j, (idx2, row2) in enumerate(agent_records.iterrows()):
                             # 不比较同一条记录，且未被匹配过
                             if idx1 != idx2 and idx1 not in matched_pairs and idx2 not in matched_pairs:
                                 amount2 = row2['金额']
-                                # 如果金额相同但符号相反，则标记为需要删除的转账对
-                                if abs(amount1 + amount2) < 0.01 and amount1 * amount2 < 0:
+                                # 使用原始日期进行比较（如果有_raw_date列）
+                                if '_raw_date' in row2:
+                                    date2 = row2['_raw_date']
+                                else:
+                                    date2 = str(row2['日期']).split(' ')[0]  # 只取日期部分
+                                
+                                # 如果金额相同但符号相反，且日期相同，则标记为需要删除的转账对
+                                if (abs(amount1 + amount2) < 0.01 and 
+                                    amount1 * amount2 < 0 and 
+                                    date1 == date2):
                                     print(f"发现转账对: 交易对方={agent}, 金额={abs(amount1)}")
                                     rows_to_drop.extend([idx1, idx2])
                                     matched_pairs.add(idx1)
@@ -187,7 +209,11 @@ class BillDeduplicator:
                 return date_str.split(' ')[0]
             
             # 为去重创建标准化的日期金额标识
-            merged_data['_comparison_date'] = merged_data['日期'].apply(normalize_date_for_comparison)
+            # 如果存在_raw_date列，则使用它进行比较
+            if '_raw_date' in merged_data.columns:
+                merged_data['_comparison_date'] = merged_data['_raw_date']
+            else:
+                merged_data['_comparison_date'] = merged_data['日期'].apply(normalize_date_for_comparison)
             merged_data['_comparison_key'] = merged_data['_comparison_date'].astype(str) + '_' + merged_data['金额'].astype(str)
             
             # 按标准化的日期和金额分组
@@ -259,7 +285,7 @@ class BillDeduplicator:
             # 构建最终结果
             result = pd.DataFrame(deduplicated_rows)
             # 删除辅助列
-            auxiliary_columns = ['_comparison_date', '_comparison_key']
+            auxiliary_columns = ['_comparison_date', '_comparison_key', '_raw_date']
             for col in auxiliary_columns:
                 if col in result.columns:
                     result = result.drop(col, axis=1)

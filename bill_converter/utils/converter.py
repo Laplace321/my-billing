@@ -161,6 +161,35 @@ class BillConverter:
         
         return result
     
+    def _parse_bank_date(self, date_str):
+        """
+        解析银行账单中的日期字符串，转换为标准格式
+        
+        Args:
+            date_str: 原始日期字符串
+            
+        Returns:
+            标准格式的日期字符串，解析失败返回原始字符串
+        """
+        if not isinstance(date_str, str):
+            return date_str
+            
+        # 去除前后空格
+        date_str = date_str.strip()
+        
+        # 尝试不同的日期格式解析
+        for date_format in self.config.BANK_DATE_FORMATS:
+            try:
+                # 尝试解析日期
+                parsed_date = datetime.strptime(date_str, date_format)
+                # 返回标准格式的日期
+                return parsed_date.strftime("%Y-%m-%d")
+            except ValueError:
+                continue  # 如果当前格式不匹配，尝试下一个格式
+        
+        # 如果所有格式都不匹配，返回原始字符串
+        return date_str
+    
     def _convert_wechat_data(self, data):
         """
         转换微信数据为MoneyPro格式
