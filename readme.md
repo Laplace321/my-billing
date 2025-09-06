@@ -86,15 +86,31 @@ bill_converter/
 
 使用主程序进行批量处理：
 ```
-python bill_converter/main.py
+python bill_converter/main.py --auto
 ```
 
 程序会自动处理以下目录中的账单文件：
-- `原始账单/alipay_record_*.csv` - 支付宝账单
-- `原始账单/微信支付账单*.xlsx` - 微信账单
-- `原始账单/招商银行*.pdf` - 招商银行账单
+- `/Users/laplacetong/My-billing/原始账单/alipay_record_*.csv` - 支付宝账单
+- `/Users/laplacetong/My-billing/原始账单/微信支付账单*.xlsx` - 微信账单
+- `/Users/laplacetong/My-billing/原始账单/招商银行*.pdf` - 招商银行账单
 
-处理后的文件将保存在 `output/` 目录中。
+处理后的文件将保存在 `/Users/laplacetong/My-billing/out` 目录中，包括：
+- 每个原始账单对应的转换后文件（文件名格式：原文件名_moneypro.csv）
+- 最终合并去重后的文件（文件名：final_merged_bills.csv）
+
+### 交互式处理
+
+运行主程序进入交互式模式：
+```
+python bill_converter/main.py
+```
+
+在交互式模式下，您可以选择不同的操作：
+1. 转换支付宝账单
+2. 转换微信账单
+3. 转换银行账单
+4. 合并多个账单并去重
+5. 自动处理原始账单目录下的所有文件
 
 ### 人工维护说明
 
