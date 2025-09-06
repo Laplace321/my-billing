@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Output directories
+out/
+output/
+
+# Sample data (if not needed)
+sample_data/
+
+# Sensitive data - Original billing files
+原始账单/
+
+# Log files
+*.log
+
+# pytest cache
+.pytest_cache/
