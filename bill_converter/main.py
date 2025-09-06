@@ -106,8 +106,8 @@ def auto_process_bills():
     """
     自动处理原始账单目录下的所有文件
     """
-    raw_bills_dir = "/Users/laplacetong/My-billing/原始账单"
-    output_dir = "/Users/laplacetong/My-billing/out"
+    raw_bills_dir = "原始账单"
+    output_dir = "out"
     
     # 确保输出目录存在
     os.makedirs(output_dir, exist_ok=True)
