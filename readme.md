@@ -156,7 +156,7 @@ python bill_converter/main.py
    cd metabase && docker-compose up -d
    ```
 
-5. 在浏览器中访问 http://billing.local，按照初始化向导进行设置
+5. 在浏览器中访问 https://billing.local，按照初始化向导进行设置
 
 6. 添加数据库连接：
    - 选择"SQLite"作为数据库类型
@@ -179,9 +179,19 @@ python bill_converter/main.py
      127.0.0.1 billing.local
      ```
 
+### HTTPS访问说明
+
+为了提供安全的访问体验，系统配置了HTTPS访问：
+
+1. 使用自签名SSL证书启用HTTPS
+2. 所有HTTP请求会自动重定向到HTTPS
+3. 默认通过HTTPS访问：https://billing.local
+
+注意：由于使用的是自签名证书，浏览器可能会显示安全警告。这是正常的，可以选择继续访问或者导入证书到系统信任库中。
+
 ### 使用说明
 
-- Metabase 服务通过域名 `billing.local` 访问
+- Metabase 服务通过域名 `billing.local` 访问（推荐使用HTTPS）
 - 账单数据存储在 SQLite 数据库中，通过 Docker 数据卷挂载实现持久化
 - 数据库文件位于项目目录的 `metabase/data/billing.db`
 - 如需更新数据，重新运行步骤 2 和 3 即可
