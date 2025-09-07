@@ -67,7 +67,7 @@ docker-compose up -d
 
 ### 6. 访问 Metabase
 
-在浏览器中访问 http://billing.local，按照初始化向导进行设置：
+在浏览器中访问 https://billing.local，按照初始化向导进行设置：
 
 1. 设置管理员账户
 2. 添加数据库连接（选择 SQLite，数据库文件路径为 `/metabase-data/billing.db`）
@@ -81,6 +81,9 @@ my-billing/
 │   ├── docker-compose.yml     # Docker 部署配置
 │   ├── nginx.conf             # Nginx 反向代理配置
 │   ├── import_data.py         # 数据导入脚本
+│   ├── ssl/                   # SSL证书目录
+│   │   ├── nginx.crt          # SSL证书
+│   │   └── nginx.key          # SSL私钥
 │   └── data/                  # Metabase 数据目录
 │       └── billing.db         # SQLite 数据库文件
 └── ...
@@ -103,8 +106,9 @@ my-billing/
 - 使用官方 metabase/metabase 镜像
 - 使用 Nginx 作为反向代理实现域名访问
 - Metabase 服务监听在内部端口 3000
-- Nginx 代理监听在外部端口 80
+- Nginx 代理监听在外部端口 80 和 443
 - 挂载数据卷以持久化 Metabase 配置和账单数据
+- 挂载SSL证书目录以支持HTTPS访问
 
 ### 域名配置
 
@@ -112,6 +116,16 @@ my-billing/
 
 1. 编辑 `metabase/nginx.conf` 文件中的 `server_name` 配置项
 2. 更新本地 hosts 文件中的域名映射
+
+### HTTPS配置
+
+为了提供安全的访问体验，系统配置了HTTPS访问：
+
+1. 使用自签名SSL证书启用HTTPS
+2. 所有HTTP请求会自动重定向到HTTPS
+3. 默认通过HTTPS访问：https://billing.local
+
+注意：由于使用的是自签名证书，浏览器可能会显示安全警告。这是正常的，可以选择继续访问或者导入证书到系统信任库中。
 
 ## 注意事项
 
@@ -121,3 +135,4 @@ my-billing/
 4. 数据库文件路径在 Metabase 配置中应使用容器内的路径 `/metabase-data/billing.db`
 5. 如需更新数据，重新运行数据导入脚本即可
 6. 确保本地 hosts 文件已正确配置域名解析
+7. 由于使用自签名证书，浏览器可能会显示安全警告，可以选择继续访问
