@@ -41,6 +41,11 @@ bill_converter/
 └── tests/                  # 测试模块
     ├── __init__.py
     └── test_alipay_parser.py   # 支付宝解析器测试
+
+metabase/                   # Metabase集成目录
+├── docker-compose.yml      # Docker部署配置
+├── import_data.py          # 数据导入脚本
+└── data/                   # 数据目录（自动生成）
 ```
 
 ## 安装说明
@@ -125,6 +130,33 @@ python bill_converter/main.py
 - 输出文件路径配置
 - 需要过滤的交易类型
 - 需要识别的收入类型
+
+## Metabase 集成
+
+本项目支持将导出的账单结果导入到开源 BI 工具 Metabase 进行二次数据分析和可视化展示。
+
+### 部署步骤
+
+1. 安装 Docker 和 Docker Compose（如果尚未安装）
+
+2. 运行账单转换器生成最终的合并账单文件：
+   ```
+   python bill_converter/main.py --auto
+   ```
+
+3. 将数据导入到 SQLite 数据库供 Metabase 使用：
+   ```
+   python metabase/import_data.py
+   ```
+
+4. 启动 Metabase：
+   ```
+   cd metabase && docker-compose up -d
+   ```
+
+5. 在浏览器中访问 http://localhost:8080，按照初始化向导进行设置
+
+详细说明请参见 [METABASE_INTEGRATION.md](file:///Users/laplacetong/My-billing/METABASE_INTEGRATION.md) 文件。
 
 ## 贡献
 
