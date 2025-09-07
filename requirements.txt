@@ -12,6 +12,9 @@ PyPDF2>=3.0.0
 # 命令行界面
 click>=8.0.0
 
+# 字符编码检测
+chardet>=5.0.0
+
 # 测试框架
 pytest>=6.2.4
 
@@ -20,3 +23,6 @@ black>=21.5b2
 
 # 代码检查
 flake8>=3.9.2
+
+# Docker和系统操作（用于run_complete_process.py）
+subprocess>=3.8.0
