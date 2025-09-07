@@ -23,6 +23,3 @@ black>=21.5b2
 
 # 代码检查
 flake8>=3.9.2
-
-# Docker和系统操作（用于run_complete_process.py）
-subprocess>=3.8.0
