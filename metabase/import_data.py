@@ -10,6 +10,7 @@ import os
 import sys
 import pandas as pd
 import sqlite3
+from datetime import datetime
 
 # 获取当前脚本所在目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -67,7 +68,7 @@ def import_csv_to_sqlite():
         conn.commit()
         conn.close()
         
-        print("数据导入完成!")
+        print("账单数据导入完成!")
         print(f"数据库路径: {db_path}")
         print(f"表名: {table_name}")
         print(f"记录数: {len(df)}")
@@ -75,7 +76,75 @@ def import_csv_to_sqlite():
         return True
         
     except Exception as e:
-        print(f"导入数据时出错: {e}")
+        print(f"导入账单数据时出错: {e}")
+        return False
+
+
+def import_assets_to_sqlite():
+    """
+    将资产 CSV 文件导入到 SQLite 数据库
+    """
+    # 确保 metabase/data 目录存在
+    data_dir = os.path.join(current_dir, 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    
+    # SQLite 数据库文件路径
+    db_path = os.path.join(data_dir, 'billing.db')
+    
+    # 资产文件目录
+    assets_dir = os.path.join(Config.DEFAULT_OUTPUT_DIR, 'assets')
+    
+    # 检查资产目录是否存在
+    if not os.path.exists(assets_dir):
+        print(f"警告: 资产目录不存在: {assets_dir}")
+        return True  # 不是错误，只是没有资产数据
+    
+    # 查找最新的资产CSV文件
+    asset_files = [f for f in os.listdir(assets_dir) if f.endswith('.csv')]
+    
+    if not asset_files:
+        print(f"警告: 在 {assets_dir} 目录中未找到资产CSV文件")
+        return True  # 不是错误，只是没有资产数据
+    
+    # 按文件名排序，获取最新的文件
+    asset_files.sort(reverse=True)
+    latest_asset_file = asset_files[0]
+    asset_file_path = os.path.join(assets_dir, latest_asset_file)
+    
+    try:
+        # 读取资产 CSV 文件
+        print(f"正在读取资产文件: {asset_file_path}")
+        df = pd.read_csv(asset_file_path)
+        
+        # 处理列名，确保符合 SQLite 要求
+        # 将列名中的特殊字符替换为下划线
+        df.columns = [col.replace(' ', '_').replace('-', '_').replace('/', '_') for col in df.columns]
+        
+        # 处理空值
+        df = df.fillna('')
+        
+        # 连接到 SQLite 数据库
+        print(f"正在连接到数据库: {db_path}")
+        conn = sqlite3.connect(db_path)
+        
+        # 将资产数据导入到 SQLite 数据库
+        table_name = 'assets_records'
+        print(f"正在导入资产数据到表: {table_name}")
+        df.to_sql(table_name, conn, if_exists='replace', index=False)
+        
+        # 提交事务并关闭连接
+        conn.commit()
+        conn.close()
+        
+        print("资产数据导入完成!")
+        print(f"数据库路径: {db_path}")
+        print(f"表名: {table_name}")
+        print(f"记录数: {len(df)}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"导入资产数据时出错: {e}")
         return False
 
 
@@ -86,9 +155,13 @@ def main():
     print("Metabase 数据导入工具")
     print("=" * 30)
     
-    success = import_csv_to_sqlite()
+    # 导入账单数据
+    bill_success = import_csv_to_sqlite()
     
-    if success:
+    # 导入资产数据
+    asset_success = import_assets_to_sqlite()
+    
+    if bill_success and asset_success:
         print("\n数据导入成功!")
         print("现在可以启动 Metabase 进行数据分析:")
         print("cd metabase && docker-compose up -d")
