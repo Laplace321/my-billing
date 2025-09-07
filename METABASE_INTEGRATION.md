@@ -13,7 +13,8 @@ Metabase 是一款开源的商业智能（BI）工具，可以帮助用户通过
 1. 账单数据导出为 CSV 格式
 2. 提供脚本将 CSV 数据导入到 SQLite 数据库
 3. 提供 Docker 配置文件用于本地部署 Metabase
-4. Metabase 连接到 SQLite 数据库进行数据分析
+4. 使用 Nginx 反向代理实现域名访问
+5. Metabase 连接到 SQLite 数据库进行数据分析
 
 ## 部署步骤
 
@@ -44,18 +45,29 @@ python metabase/import_data.py
 
 这将创建 `metabase/data/billing.db` 数据库文件，其中包含账单数据。
 
-### 4. 启动 Metabase
+### 4. 配置域名解析
 
-使用 Docker Compose 启动 Metabase：
+为了使用域名访问 Metabase，需要在本地配置域名解析：
+
+- 在 Linux/Mac 系统中，编辑 `/etc/hosts` 文件
+- 在 Windows 系统中，编辑 `C:\Windows\System32\drivers\etc\hosts` 文件
+- 添加以下行：
+  ```
+  127.0.0.1 billing.local
+  ```
+
+### 5. 启动 Metabase
+
+使用 Docker Compose 启动 Metabase 和 Nginx 反向代理：
 
 ```bash
 cd metabase
 docker-compose up -d
 ```
 
-### 5. 访问 Metabase
+### 6. 访问 Metabase
 
-在浏览器中访问 http://localhost:8080，按照初始化向导进行设置：
+在浏览器中访问 http://billing.local，按照初始化向导进行设置：
 
 1. 设置管理员账户
 2. 添加数据库连接（选择 SQLite，数据库文件路径为 `/metabase-data/billing.db`）
@@ -67,6 +79,7 @@ docker-compose up -d
 my-billing/
 ├── metabase/
 │   ├── docker-compose.yml     # Docker 部署配置
+│   ├── nginx.conf             # Nginx 反向代理配置
 │   ├── import_data.py         # 数据导入脚本
 │   └── data/                  # Metabase 数据目录
 │       └── billing.db         # SQLite 数据库文件
@@ -85,11 +98,20 @@ my-billing/
 
 ### Docker Compose 配置
 
-`metabase/docker-compose.yml` 文件定义了 Metabase 服务：
+`metabase/docker-compose.yml` 文件定义了 Metabase 和 Nginx 服务：
 
 - 使用官方 metabase/metabase 镜像
-- 映射端口 8080:3000
+- 使用 Nginx 作为反向代理实现域名访问
+- Metabase 服务监听在内部端口 3000
+- Nginx 代理监听在外部端口 80
 - 挂载数据卷以持久化 Metabase 配置和账单数据
+
+### 域名配置
+
+默认使用 `billing.local` 作为访问域名。如需修改域名，请：
+
+1. 编辑 `metabase/nginx.conf` 文件中的 `server_name` 配置项
+2. 更新本地 hosts 文件中的域名映射
 
 ## 注意事项
 
@@ -98,3 +120,4 @@ my-billing/
 3. Metabase 初始化时需要一些时间，请耐心等待
 4. 数据库文件路径在 Metabase 配置中应使用容器内的路径 `/metabase-data/billing.db`
 5. 如需更新数据，重新运行数据导入脚本即可
+6. 确保本地 hosts 文件已正确配置域名解析
