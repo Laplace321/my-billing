@@ -127,10 +127,10 @@ def import_assets_to_sqlite():
         print(f"正在连接到数据库: {db_path}")
         conn = sqlite3.connect(db_path)
         
-        # 将资产数据导入到 SQLite 数据库
+        # 将资产数据导入到 SQLite 数据库，使用append模式实现增量写入
         table_name = 'assets_records'
         print(f"正在导入资产数据到表: {table_name}")
-        df.to_sql(table_name, conn, if_exists='replace', index=False)
+        df.to_sql(table_name, conn, if_exists='append', index=False)
         
         # 提交事务并关闭连接
         conn.commit()
