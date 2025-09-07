@@ -18,6 +18,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import Config
 
+# 导入jieba分词库
+try:
+    import jieba
+    JIEBA_AVAILABLE = True
+except ImportError:
+    JIEBA_AVAILABLE = False
+    print("警告: 未安装jieba库，将使用基础分词方法")
+
 
 class BillConverter:
     """
@@ -31,6 +39,8 @@ class BillConverter:
         self.config = Config()
         # 加载分类关键词
         self.category_keywords = self._load_category_keywords()
+        # 构建关键词索引以提高匹配效率
+        self.keyword_index = self._build_keyword_index()
     
     def _load_category_keywords(self):
         """
@@ -47,20 +57,86 @@ class BillConverter:
             print(f"加载分类关键词失败: {e}")
             # 返回默认关键词
             return {
-                '食品': ['淘宝闪购', '肯德基', '食品', '霸王茶姬', '鲜丰水果', '粥皇港式茶餐厅', 'KFC', '麦当劳', '星巴克', '面包', '零食'],
-                '服装': ['耐克', '阿迪达斯', '优衣库', 'ZARA', 'H&M', '服装'],
-                '交通': ['高德打车', '滴滴打车', '出租车', '地铁', '公交', '火车票', '机票', 'uber', '出行'],
-                '亲属': ['a.k.a. 小黄蜂'],
-                '住宅': ['房租', '水电费', '物业费', '家居'],
-                '杂货': ['便利店', '超市', '日用品'],
-                '娱乐': ['电影', '游戏', 'KTV', '游乐场'],
-                '教育': ['学费', '培训', '书籍', '文具'],
-                '医疗': ['医院', '药房', '诊所'],
-                '旅游': ['酒店', '景点', '旅行社', '度假'],
-                '数码': ['手机', '电脑', '数码产品', '电子产品'],
-                '购物': ['天猫', '淘宝', '京东', '购物'],
-                '投资': ['余额宝', '理财', '基金', '投资']
+                '食品': {
+                    'keywords': ['淘宝闪购', '肯德基', '食品', '霸王茶姬', '鲜丰水果', '粥皇港式茶餐厅', 
+                            'KFC', '麦当劳', '星巴克', '面包', '零食'],
+                    'word_dict': ['食品', '水果', '蔬菜', '肉类', '海鲜', '粮油', '调料', '饮料', 
+                            '酒水', '糖果', '巧克力', '坚果', '早餐', '午餐', '晚餐', '外卖', 
+                            '餐厅', '饭店', '火锅', '烧烤', '奶茶', '咖啡', '奶茶店', '咖啡厅', 
+                            '快餐', '熟食', '糕点', '甜品', '面包', '零食', '麦当劳', '肯德基', 
+                            '星巴克', '霸王茶姬', '鲜丰水果', '粥皇', '火锅', '烧烤', '拿铁',
+                            '汉堡', '薯条', '可乐', '雪碧', '包子', '馒头', '面条', '米饭', 
+                            '炒菜', '盒饭', '便当', '寿司', '拉面', '饺子', '智盘消费', '点餐',
+                            '餐台', '煲汤', '菌菇', '白塔店', '饮用水', '售货柜', '桃源人家', 
+                            '炉上夜档', 'Manner', 'Coffee', '盒马', '菜鸟', '总部店',
+                            '二维码', '支付', '台州市', '新荣', '实业', '有限公司', '美团']
+                },
+                '服装': {
+                    'keywords': ['耐克', '阿迪达斯', '优衣库', 'ZARA', 'H&M', '服装', '鞋子', '衣服',
+                            '裤子', '裙子', '内衣', '袜子', '帽子', '围巾', '手套', '皮带',
+                            '包包', '箱包', '饰品', '首饰', '手表', '眼镜', '运动', '休闲',
+                            '外套', 'T恤', '牛仔裤', '连衣裙', '高跟鞋', '运动鞋', '皮鞋'],
+                    'word_dict': ['服装', '鞋子', '衣服', '裤子', '裙子', '内衣', '袜子', '帽子', 
+                            '围巾', '手套', '皮带', '包包', '箱包', '饰品', '首饰', '手表', 
+                            '眼镜', '运动', '休闲', '耐克', '阿迪达斯', '优衣库', 'ZARA', 'H&M',
+                            '外套', 'T恤', '牛仔裤', '连衣裙', '高跟鞋', '运动鞋', '皮鞋']
+                },
+                '交通': {
+                    'keywords': ['高德打车', '滴滴打车', '出租车', '地铁', '公交', '火车票', '机票', 
+                            'uber', '出行', '高铁', '飞机', '轮船', '共享单车', '共享汽车',
+                            '加油', '停车费', '过路费', '停车', '加油站', '停车', '过路',
+                            '出租车', 'uber', '打车', '高速', '动车', '航班', '班机'],
+                    'word_dict': ['高德打车', '滴滴打车', '出租车', '地铁', '公交', '火车票', '机票', 
+                            'uber', '出行', '高铁', '飞机', '轮船', '共享单车', '共享汽车',
+                            '加油', '停车费', '过路费', '停车', '加油站', '过路', '交通',
+                            '打车', '高速', '动车', '航班', '班机', '浙江高速']
+                }
             }
+    
+    def _build_keyword_index(self):
+        """
+        构建关键词索引以提高匹配效率
+        
+        Returns:
+            关键词索引字典，格式为 {关键词: 类别}
+        """
+        keyword_index = {}
+        for category, category_info in self.category_keywords.items():
+            # 添加keywords中的关键词
+            keywords = category_info.get('keywords', [])
+            for keyword in keywords:
+                # 处理转义字符
+                keyword = keyword.replace('\\', '')
+                keyword_index[keyword.lower()] = category
+            
+            # 添加word_dict中的关键词
+            word_dict = category_info.get('word_dict', [])
+            for word in word_dict:
+                # 处理转义字符
+                word = word.replace('\\', '')
+                keyword_index[word.lower()] = category
+        
+        return keyword_index
+    
+    def _segment_text(self, text):
+        """
+        对文本进行分词处理
+        
+        Args:
+            text: 待分词的文本
+            
+        Returns:
+            分词结果列表
+        """
+        if not isinstance(text, str):
+            return []
+        
+        # 如果jieba可用，使用jieba分词
+        if JIEBA_AVAILABLE:
+            return list(jieba.cut(text))
+        else:
+            # 基础分词方法：按空格和常见分隔符分割
+            return re.split(r'[\s\-_,，。！？；;]', text.lower())
     
     def convert_to_moneypro(self, source_data, source_type):
         """
@@ -85,6 +161,35 @@ class BillConverter:
             return self._convert_bank_data(source_data)
         
         return None
+    
+    def _parse_bank_date(self, date_str):
+        """
+        解析银行账单中的日期字符串，转换为标准格式
+        
+        Args:
+            date_str: 原始日期字符串
+            
+        Returns:
+            标准格式的日期字符串，解析失败返回原始字符串
+        """
+        if not isinstance(date_str, str):
+            return date_str
+            
+        # 去除前后空格
+        date_str = date_str.strip()
+        
+        # 尝试不同的日期格式解析
+        for date_format in self.config.BANK_DATE_FORMATS:
+            try:
+                # 尝试解析日期
+                parsed_date = datetime.strptime(date_str, date_format)
+                # 返回标准格式的日期
+                return parsed_date.strftime("%Y-%m-%d")
+            except ValueError:
+                continue  # 如果当前格式不匹配，尝试下一个格式
+        
+        # 如果所有格式都不匹配，返回原始字符串
+        return date_str
     
     def _convert_alipay_data(self, data):
         """
@@ -161,35 +266,6 @@ class BillConverter:
         result['货币'] = 'CNY'
         
         return result
-    
-    def _parse_bank_date(self, date_str):
-        """
-        解析银行账单中的日期字符串，转换为标准格式
-        
-        Args:
-            date_str: 原始日期字符串
-            
-        Returns:
-            标准格式的日期字符串，解析失败返回原始字符串
-        """
-        if not isinstance(date_str, str):
-            return date_str
-            
-        # 去除前后空格
-        date_str = date_str.strip()
-        
-        # 尝试不同的日期格式解析
-        for date_format in self.config.BANK_DATE_FORMATS:
-            try:
-                # 尝试解析日期
-                parsed_date = datetime.strptime(date_str, date_format)
-                # 返回标准格式的日期
-                return parsed_date.strftime("%Y-%m-%d")
-            except ValueError:
-                continue  # 如果当前格式不匹配，尝试下一个格式
-        
-        # 如果所有格式都不匹配，返回原始字符串
-        return date_str
     
     def _convert_wechat_data(self, data):
         """
@@ -361,17 +437,21 @@ class BillConverter:
         # 合并描述和交易对方用于关键词搜索
         text_for_search = (str(description) + " " + str(counterparty)).lower()
         
+        # 首先使用关键词索引进行快速匹配
+        # 直接匹配整个文本
+        if text_for_search in self.keyword_index:
+            return self.keyword_index[text_for_search]
+        
+        # 分词匹配
+        words = self._segment_text(text_for_search)
+        for word in words:
+            if word in self.keyword_index:
+                return self.keyword_index[word]
+        
         # 使用分词方法进行更准确的分类
         best_category = self._classify_with_word_segmentation(text_for_search)
         if best_category:
             return best_category
-        
-        # 如果分词方法没有找到匹配，使用关键词匹配
-        for category, category_info in self.category_keywords.items():
-            keywords = category_info.get('keywords', [])
-            for keyword in keywords:
-                if keyword.lower() in text_for_search:
-                    return category
         
         # 无法识别，归为其他
         return '其他'
@@ -386,8 +466,8 @@ class BillConverter:
         Returns:
             分类结果，如果没有匹配则返回None
         """
-        # 简单的分词方法：按空格和常见分隔符分割
-        words = re.split(r'[\s\-_,，。！？；;]', text.lower())
+        # 使用分词方法
+        words = self._segment_text(text)
         
         # 统计每个类别匹配的词数
         category_scores = {}
