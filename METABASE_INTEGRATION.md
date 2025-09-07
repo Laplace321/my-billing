@@ -127,6 +127,83 @@ my-billing/
 
 注意：由于使用的是自签名证书，浏览器可能会显示安全警告。这是正常的，可以选择继续访问或者导入证书到系统信任库中。
 
+为了消除浏览器的安全警告，建议使用由受信任的证书颁发机构签发的证书，例如Let's Encrypt。以下是获取和配置受信任SSL证书的步骤：
+
+1. 确保您的域名已正确解析到服务器IP地址
+   - 如果您在本地运行，需要一个指向本地IP的公共域名
+   - 可以使用服务如nip.io或sslip.io来获得基于IP的域名，例如：`billing.127.0.0.1.nip.io`
+
+2. 安装Certbot（Let's Encrypt客户端）
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install certbot
+   
+   # CentOS/RHEL
+   sudo yum install certbot
+   
+   # macOS
+   brew install certbot
+   ```
+
+3. 获取SSL证书
+   ```bash
+   # 使用standalone模式获取证书（会临时占用80端口）
+   sudo certbot certonly --standalone -d billing.yourdomain.com
+   
+   # 或者如果您已有Web服务器运行，可以使用webroot模式
+   sudo certbot certonly --webroot -w /path/to/webroot -d billing.yourdomain.com
+   ```
+
+4. 更新Nginx配置以使用新证书
+   ```nginx
+   # 将以下行：
+   ssl_certificate /etc/nginx/ssl/nginx.crt;
+   ssl_certificate_key /etc/nginx/ssl/nginx.key;
+   
+   # 替换为：
+   ssl_certificate /etc/letsencrypt/live/billing.yourdomain.com/fullchain.pem;
+   ssl_certificate_key /etc/letsencrypt/live/billing.yourdomain.com/privkey.pem;
+   ```
+
+5. 设置证书自动续期
+   ```bash
+   # 添加到crontab以自动续期证书
+   sudo crontab -e
+   # 添加以下行：
+   0 12 * * * /usr/bin/certbot renew --quiet
+   ```
+
+对于本地开发环境，如果无法获取公共域名，可以继续使用自签名证书，但需要手动将证书添加到系统或浏览器的信任存储中。
+
+### 手动信任自签名证书
+
+如果您希望在本地环境中信任自签名证书，可以按照以下步骤操作：
+
+#### Windows系统：
+1. 在浏览器中访问 https://billing.local
+2. 点击"高级"或"继续访问"（具体选项因浏览器而异）
+3. 或者将证书导入到Windows证书存储：
+   - 打开`certmgr.msc`
+   - 导航到"受信任的根证书颁发机构"
+   - 右键点击"证书"，选择"所有任务" -> "导入"
+   - 选择证书文件并完成导入向导
+
+#### macOS系统：
+1. 打开"钥匙串访问"应用
+2. 选择"系统"钥匙串
+3. 将证书文件拖拽到钥匙串中
+4. 双击导入的证书
+5. 展开"信任"部分
+6. 将"使用此证书时"设置为"始终信任"
+
+#### Linux系统：
+1. 将证书复制到系统证书目录：
+   ```bash
+   sudo cp nginx.crt /usr/local/share/ca-certificates/billing.local.crt
+   sudo update-ca-certificates
+   ```
+
 ## 注意事项
 
 1. 确保 Docker 和 Docker Compose 已正确安装
