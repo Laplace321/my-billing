@@ -11,6 +11,7 @@ import sys
 import pandas as pd
 import sqlite3
 from datetime import datetime
+import hashlib
 
 # 获取当前脚本所在目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -25,18 +26,20 @@ from bill_converter.config import Config
 def generate_bill_key(row):
     """
     生成账单的主键
-    主键由金额+日期+目标账户+源账户+描述决定
+    主键由金额、日期、源账户、描述、代理决定，并使用MD5哈希避免过长字符串
     """
     # 处理可能的 NaN 值
     amount = str(row.get('金额', '') or '')
     date = str(row.get('日期', '') or '')
-    target_account = str(row.get('目标账户', '') or '')
     source_account = str(row.get('源账户', '') or '')
     description = str(row.get('描述', '') or '')
+    agent = str(row.get('代理', '') or '')
     
     # 组合主键字段
-    key = f"{amount}_{date}_{target_account}_{source_account}_{description}"
-    return key
+    key_string = f"{amount}_{date}_{source_account}_{description}_{agent}"
+    
+    # 使用MD5生成固定长度的哈希值
+    return hashlib.md5(key_string.encode('utf-8')).hexdigest()
 
 
 def import_csv_to_sqlite():
@@ -65,8 +68,24 @@ def import_csv_to_sqlite():
         print(f"正在读取 CSV 文件: {csv_path}")
         df = pd.read_csv(csv_path)
         
+        # 标准化日期格式
+        if '日期' in df.columns:
+            try:
+                # 尝试自动识别日期格式并统一转换
+                df['日期'] = pd.to_datetime(df['日期'], errors='coerce').dt.strftime('%Y-%m-%d')
+                # 重命名日期列为更规范的格式
+                df.rename(columns={'日期': '交易日期'}, inplace=True)
+            except Exception as e:
+                print(f"日期格式转换时出错: {e}")
+                # 如果转换失败，保留原始值但记录错误
+                df['日期格式错误'] = str(e)
+        
         # 添加主键列
         df['账单主键'] = df.apply(generate_bill_key, axis=1)
+        
+        # 更新时间列，使用当前数据生成时间
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        df['时间'] = current_time
         
         # 处理列名，确保符合 SQLite 要求
         # 将列名中的特殊字符替换为下划线
