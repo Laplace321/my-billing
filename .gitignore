@@ -172,3 +172,6 @@ metabase/ssl/
 # Sample and raw bill data
 sample_data/
 原始账单/
+
+# qwen 训练要求
+update_requirements_for_qwen.md
