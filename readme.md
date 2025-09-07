@@ -163,67 +163,6 @@ python run_complete_process.py
    - 对应人民币金额：根据币种自动计算的人民币等值金额
    - 资产/负债：根据账户分类自动判断（支付账户和其他资产为资产，信用卡为负债）
 
-### 命令行使用
-
-1. 转换支付宝账单：
-   ```
-   python -m bill_converter.cli alipay -i <支付宝账单文件路径> -o <输出文件路径>
-   ```
-
-2. 转换微信账单：
-   ```
-   python -m bill_converter.cli wechat -i <微信账单文件路径> -o <输出文件路径>
-   ```
-
-3. 转换银行账单：
-   ```
-   python -m bill_converter.cli bank -i <银行账单文件路径> -o <输出文件路径> --bank <银行类型>
-   ```
-
-### 批量处理
-
-使用主程序进行批量处理：
-```
-python bill_converter/main.py --auto
-```
-
-程序会自动处理以下目录中的账单文件：
-- `原始账单/alipay_record_*.csv` - 支付宝账单
-- `原始账单/微信支付账单*.xlsx` - 微信账单
-- `原始账单/招商银行*.pdf` - 招商银行账单
-
-处理后的文件将保存在 `out/` 目录中，包括：
-- 每个原始账单对应的转换后文件（文件名格式：原文件名_moneypro.csv）
-- 最终合并去重后的文件（文件名：final_merged_bills.csv）
-
-### 交互式处理
-
-运行主程序进入交互式模式：
-```
-python bill_converter/main.py
-```
-
-在交互式模式下，您可以选择不同的操作：
-1. 转换支付宝账单
-2. 转换微信账单
-3. 转换银行账单
-4. 合并多个账单并去重
-5. 自动处理原始账单目录下的所有文件
-
-### 人工维护说明
-
-#### 分类关键词维护
-
-分类关键词存储在 `bill_converter/data/category_keywords.json` 文件中，可以根据需要添加或修改关键词。
-
-#### 资产信息维护
-
-资产信息存储在【原始资产】目录下的CSV文件中，可以根据需要添加或修改资产信息。资产信息包含以下字段：
-- 账户分类：支付账户、信用卡或其他资产
-- 币种：资产的货币类型（如CNY、USD等）
-- 金额：资产金额
-- 描述：资产的描述信息
-
 资产转换脚本会自动计算对应人民币金额和资产/负债属性。
 
 #### 配置文件
@@ -269,6 +208,19 @@ python bill_converter/main.py
 
 7. 开始数据分析和可视化
 
+### 数据库维护
+
+如果数据库中意外写入了测试数据或重复数据，可以通过以下SQL语句清理：
+
+```
+-- 删除重复的资产记录（保留每组重复记录中ROWID最小的一条）
+DELETE FROM assets_records WHERE ROWID NOT IN (
+    SELECT MIN(ROWID) 
+    FROM assets_records 
+    GROUP BY 账户分类, 币种, 金额, 描述, 时间, 对应人民币金额, 资产_负债
+);
+```
+
 ### 域名配置说明
 
 为了使用域名访问 Metabase，而不是 IP 地址，系统使用 Nginx 作为反向代理。
@@ -307,10 +259,6 @@ python bill_converter/main.py
 
 详细说明请参见 [METABASE_INTEGRATION.md](file:///Users/laplacetong/My-billing/METABASE_INTEGRATION.md) 文件。
 
-## 贡献
+## 问题排查
 
-欢迎提交 Issue 和 Pull Request 来改进这个项目。
-
-## 许可证
-
-本项目采用 MIT 许可证，详情请参见 LICENSE 文件。
+```
