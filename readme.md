@@ -11,6 +11,7 @@
 3. 跨平台转账识别与去重
 4. 投资类交易过滤
 5. 工资和公积金收入自动识别
+6. 资产记录功能，支持导出当前资产快照信息
 
 ## 项目结构
 
@@ -42,10 +43,26 @@ bill_converter/
     ├── __init__.py
     └── test_alipay_parser.py   # 支付宝解析器测试
 
+原始账单/                  # 原始账单文件目录
+├── alipay/                 # 支付宝账单
+├── wechat/                 # 微信账单
+└── bank/                   # 银行账单
+
+原始资产/                  # 原始资产信息文件目录
+└── assets.csv              # 资产信息文件
+
 metabase/                   # Metabase集成目录
 ├── docker-compose.yml      # Docker部署配置
 ├── import_data.py          # 数据导入脚本
 └── data/                   # 数据目录（自动生成）
+
+out/                        # 输出目录
+├── alipay_moneypro.csv     # 支付宝账单转换结果
+├── wechat_moneypro.csv     # 微信账单转换结果
+├── bank_moneypro.csv       # 银行账单转换结果
+├── final_merged_bills.csv  # 最终合并去重后的文件
+└── assets/                 # 资产信息输出目录
+    └── 20250904_asset.csv  # 资产信息转换结果（带时间戳）
 ```
 
 ## 安装说明
@@ -77,12 +94,17 @@ metabase/                   # Metabase集成目录
    python bill_converter/main.py --auto
    ```
 
-2. **导入数据到Metabase**
+2. **处理资产信息**
+   ```bash
+   python asset_converter.py
+   ```
+
+3. **导入数据到Metabase**
    ```bash
    cd metabase && python import_data.py
    ```
 
-3. **启动Metabase服务**
+4. **启动Metabase服务**
    ```bash
    cd metabase && docker-compose up -d
    ```
@@ -91,7 +113,7 @@ metabase/                   # Metabase集成目录
 
 使用新创建的整合脚本可以一键执行完整的账单处理流程：
 
-```bash
+```
 python run_complete_process.py
 ```
 
@@ -111,11 +133,35 @@ python run_complete_process.py
 #### run_complete_process.py
 这是新添加的一体化脚本，整合了整个账单处理流程：
 - 自动处理所有原始账单文件
+- 自动处理原始资产目录下的资产信息文件
 - 导入数据到Metabase数据库
 - 启动Metabase和Nginx服务
 - 显示服务状态和访问信息
 
 使用这个脚本可以大大简化操作流程，特别适合日常使用。
+
+### 资产记录功能
+
+本项目新增了资产记录功能，可以导出当前资产的快照信息：
+
+1. 在【原始资产】目录下维护资产信息CSV文件，包含以下字段：
+   - 账户分类（支付账户、信用卡、其他资产）
+   - 币种
+   - 金额
+   - 描述
+
+2. 运行资产转换脚本：
+   ```bash
+   python asset_converter.py
+   ```
+   
+3. 转换后的资产信息将保存在 `out/assets` 目录下，文件名包含时间戳以避免覆盖
+
+4. 数据导入脚本会自动将最新的资产信息导入到Metabase数据库中
+
+5. 资产信息输出模板已更新，新增两列：
+   - 对应人民币金额：根据币种自动计算的人民币等值金额
+   - 资产/负债：根据账户分类自动判断（支付账户和其他资产为资产，信用卡为负债）
 
 ### 命令行使用
 
@@ -170,10 +216,21 @@ python bill_converter/main.py
 
 分类关键词存储在 `bill_converter/data/category_keywords.json` 文件中，可以根据需要添加或修改关键词。
 
+#### 资产信息维护
+
+资产信息存储在【原始资产】目录下的CSV文件中，可以根据需要添加或修改资产信息。资产信息包含以下字段：
+- 账户分类：支付账户、信用卡或其他资产
+- 币种：资产的货币类型（如CNY、USD等）
+- 金额：资产金额
+- 描述：资产的描述信息
+
+资产转换脚本会自动计算对应人民币金额和资产/负债属性。
+
 #### 配置文件
 
 配置文件 `bill_converter/config.py` 包含以下设置：
 - 账单文件路径配置
+- 资产文件路径配置
 - 输出文件路径配置
 - 需要过滤的交易类型
 - 需要识别的收入类型

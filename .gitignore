@@ -172,6 +172,13 @@ metabase/ssl/
 # Sample and raw bill data
 sample_data/
 原始账单/
+原始资产/
 
 # qwen 训练要求
 update_requirements_for_qwen.md
+
+# 需求文档
+bill_converter/utils/PRD.md
+
+# 进度管理
+progress_manage.md

@@ -17,6 +17,28 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from bill_converter.config import Config
 
 
+def get_exchange_rate(currency):
+    """
+    获取汇率（示例汇率，实际应用中应该从外部API获取实时汇率）
+    
+    Args:
+        currency: 货币代码
+        
+    Returns:
+        对应货币到人民币的汇率
+    """
+    # 示例汇率，实际应用中应该从外部API获取实时汇率
+    exchange_rates = {
+        'CNY': 1.0,
+        'USD': 7.2,
+        'EUR': 7.8,
+        'JPY': 0.05,
+        'HKD': 0.92,
+    }
+    
+    return exchange_rates.get(currency, 1.0)
+
+
 def convert_assets():
     """
     转换资产信息
@@ -55,6 +77,24 @@ def convert_assets():
         # 添加时间戳列
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         df['时间'] = timestamp
+        
+        # 处理新增列：对应人民币金额
+        def convert_to_cny(row):
+            currency = row['币种']
+            amount = row['金额']
+            exchange_rate = get_exchange_rate(currency)
+            return round(amount * exchange_rate, 2)
+        
+        df['对应人民币金额'] = df.apply(convert_to_cny, axis=1)
+        
+        # 处理新增列：资产/负债
+        def determine_asset_or_liability(account_type):
+            if account_type == '信用卡':
+                return '负债'
+            else:
+                return '资产'
+        
+        df['资产/负债'] = df['账户分类'].apply(determine_asset_or_liability)
         
         # 确保输出目录存在
         output_dir = os.path.join(Config.DEFAULT_OUTPUT_DIR, 'assets')
