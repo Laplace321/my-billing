@@ -15,7 +15,7 @@ import argparse
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from bill_converter.main import auto_process_bills
-from metabase.import_data import import_csv_to_sqlite
+from metabase.import_data import import_csv_to_sqlite, import_assets_to_sqlite
 
 
 def run_docker_compose_command(command):
@@ -53,8 +53,9 @@ def complete_process(auto_mode=True, start_services=True):
     """
     完整的账单处理流程
     1. 处理原始账单文件
-    2. 导入数据到Metabase
-    3. 启动Metabase服务
+    2. 处理原始资产文件
+    3. 导入数据到Metabase
+    4. 启动Metabase服务
     
     Args:
         auto_mode (bool): 是否使用自动模式处理账单
@@ -80,23 +81,58 @@ def complete_process(auto_mode=True, start_services=True):
         print(f"处理账单文件时出错: {e}")
         return False
     
-    # 步骤2: 导入数据到Metabase
-    print("\n步骤2: 导入数据到Metabase")
+    # 步骤2: 处理原始资产文件
+    print("\n步骤2: 处理原始资产文件")
     print("-" * 30)
     
     try:
-        success = import_csv_to_sqlite()
-        if not success:
-            print("数据导入失败")
+        print("运行资产转换脚本...")
+        # 切换到项目根目录并运行资产转换脚本
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        result = subprocess.run(
+            ['python', 'asset_converter.py'], 
+            cwd=project_root, 
+            capture_output=True, 
+            text=True
+        )
+        
+        if result.returncode != 0:
+            print(f"资产转换脚本执行失败: {result.stderr}")
             return False
-        print("数据导入成功")
+            
+        print(result.stdout)
+        print("资产信息处理成功")
+    except Exception as e:
+        print(f"处理资产文件时出错: {e}")
+        return False
+    
+    # 步骤3: 导入数据到Metabase
+    print("\n步骤3: 导入数据到Metabase")
+    print("-" * 30)
+    
+    try:
+        # 导入账单数据
+        print("正在导入账单数据...")
+        bill_success = import_csv_to_sqlite()
+        if not bill_success:
+            print("账单数据导入失败")
+            return False
+        print("账单数据导入成功")
+        
+        # 导入资产数据
+        print("正在导入资产数据...")
+        asset_success = import_assets_to_sqlite()
+        if not asset_success:
+            print("资产数据导入失败")
+            return False
+        print("资产数据导入成功")
     except Exception as e:
         print(f"导入数据时出错: {e}")
         return False
     
-    # 步骤3: 启动Metabase服务
+    # 步骤4: 启动Metabase服务
     if start_services:
-        print("\n步骤3: 启动Metabase服务")
+        print("\n步骤4: 启动Metabase服务")
         print("-" * 30)
         
         # 停止可能正在运行的服务
