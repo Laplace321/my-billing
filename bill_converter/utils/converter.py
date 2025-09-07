@@ -442,6 +442,15 @@ class BillConverter:
         if text_for_search in self.keyword_index:
             return self.keyword_index[text_for_search]
         
+        # 尝试匹配较长的关键词组合
+        # 按空格分割文本，尝试不同的组合
+        text_parts = text_for_search.split()
+        for i in range(len(text_parts)):
+            for j in range(i+1, len(text_parts)+1):
+                combined_text = ' '.join(text_parts[i:j])
+                if combined_text in self.keyword_index:
+                    return self.keyword_index[combined_text]
+        
         # 分词匹配
         words = self._segment_text(text_for_search)
         for word in words:
