@@ -30,7 +30,8 @@ def generate_bill_key(row):
     """
     # 处理可能的 NaN 值
     amount = str(row.get('金额', '') or '')
-    date = str(row.get('日期', '') or '')
+    # 检查日期列是否存在，可能已被重命名为交易日期
+    date = str(row.get('日期', '') or row.get('交易日期', '') or '')
     source_account = str(row.get('源账户', '') or '')
     description = str(row.get('描述', '') or '')
     agent = str(row.get('代理', '') or '')
@@ -68,13 +69,12 @@ def import_csv_to_sqlite():
         print(f"正在读取 CSV 文件: {csv_path}")
         df = pd.read_csv(csv_path)
         
-        # 标准化日期格式
-        if '日期' in df.columns:
+        # 处理可能的日期列重命名（保持原始列名）
+        date_cols = [col for col in df.columns if col in ['日期', '交易日期']]
+        for date_col in date_cols:
             try:
-                # 尝试自动识别日期格式并统一转换
-                df['日期'] = pd.to_datetime(df['日期'], errors='coerce').dt.strftime('%Y-%m-%d')
-                # 重命名日期列为更规范的格式
-                df.rename(columns={'日期': '交易日期'}, inplace=True)
+                # 尝试自动识别日期格式并统一转换，保留完整的时间信息
+                df[date_col] = pd.to_datetime(df[date_col], errors='coerce').dt.strftime('%Y-%m-%d %H:%M:%S')
             except Exception as e:
                 print(f"日期格式转换时出错: {e}")
                 # 如果转换失败，保留原始值但记录错误
