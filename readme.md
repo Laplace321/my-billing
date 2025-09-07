@@ -141,6 +141,48 @@ python run_complete_process.py
 
 访问地址：https://billing.local
 
+### 容器服务管理
+
+当本地机器重启后，容器服务不会自动启动。在这种情况下，可以使用以下命令单独启动Metabase服务：
+
+```bash
+cd metabase && docker-compose up -d
+```
+
+要停止服务，可以使用：
+
+```bash
+cd metabase && docker-compose down
+```
+
+要查看服务状态，可以使用：
+
+```bash
+cd metabase && docker-compose ps
+```
+
+这种方法适用于只需要重新启动服务而不需要重新处理账单数据的场景。
+
+#### 故障排除
+
+如果在启动服务时遇到问题，请检查以下几点：
+
+1. **Docker服务是否正在运行**
+   - 确保Docker Desktop或OrbStack等Docker环境已启动
+   - 在Mac上，可以在系统托盘中查看Docker状态
+
+2. **Docker守护进程连接问题**
+   - 错误信息如"Cannot connect to the Docker daemon"表示Docker服务未运行
+   - 启动Docker服务后重试命令
+
+3. **权限问题**
+   - 确保当前用户有权限运行Docker命令
+   - 在某些系统上可能需要使用`sudo`运行Docker命令
+
+4. **端口占用**
+   - 确保端口80和443未被其他服务占用
+   - 可以通过`lsof -i :80`和`lsof -i :443`检查端口占用情况
+
 ### 脚本功能说明
 
 #### run_complete_process.py
