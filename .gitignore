@@ -289,9 +289,9 @@ metabase/certs/
 
 # Sample and raw bill data
 sample_data/
-原始账单/
-原始资产/
-!原始资产/.gitkeep
+raw_bills/
+raw_assets/
+!raw_assets/.gitkeep
 
 
 # output

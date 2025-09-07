@@ -66,7 +66,7 @@ def convert_assets():
     转换资产信息
     """
     # 原始资产目录
-    raw_assets_dir = "原始资产"
+    raw_assets_dir = "raw_assets"
     
     # 检查原始资产目录是否存在
     if not os.path.exists(raw_assets_dir):

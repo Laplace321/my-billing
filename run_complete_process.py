@@ -71,7 +71,7 @@ def complete_process(auto_mode=True, start_services=True):
     
     try:
         if auto_mode:
-            print("使用自动模式处理原始账单目录下的所有文件")
+            print("使用自动模式处理raw_bills目录下的所有文件")
             auto_process_bills()
         else:
             print("请手动运行账单转换器:")

@@ -27,7 +27,7 @@ class Config:
     DEFAULT_OUTPUT_DIR = 'out'
     
     # 默认账单输入目录
-    DEFAULT_BILLS_DIR = '原始账单'
+    DEFAULT_BILLS_DIR = 'raw_bills'
     
     # 默认资产输入目录
-    DEFAULT_ASSETS_DIR = '原始资产'
+    DEFAULT_ASSETS_DIR = 'raw_assets'

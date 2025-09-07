@@ -55,12 +55,12 @@ bill_converter/
     ├── __init__.py
     └── test_alipay_parser.py   # 支付宝解析器测试
 
-原始账单/                  # 原始账单文件目录
+raw_bills/                  # 原始账单文件目录
 ├── alipay/                 # 支付宝账单
 ├── wechat/                 # 微信账单
 └── bank/                   # 银行账单
 
-原始资产/                  # 原始资产信息文件目录
+raw_assets/                 # 原始资产信息文件目录
 └── assets.csv              # 资产信息文件
 
 metabase/                   # Metabase集成目录
@@ -132,8 +132,8 @@ python run_complete_process.py
 ```
 
 该脚本会自动执行以下操作：
-1. 处理原始账单目录下的所有账单文件
-2. 处理原始资产目录下的资产信息文件
+1. 处理raw_bills目录下的所有账单文件
+2. 处理raw_assets目录下的资产信息文件
 3. 将处理后的数据导入Metabase数据库
 4. 启动Metabase服务
 
@@ -201,7 +201,7 @@ cd metabase && docker-compose ps
 
 本项目新增了资产记录功能，可以导出当前资产的快照信息：
 
-1. 在【原始资产】目录下维护资产信息CSV文件，包含以下字段：
+1. 在【raw_assets】目录下维护资产信息CSV文件，包含以下字段：
    - 账户分类（支付账户、信用卡、其他资产）
    - 币种
    - 金额
@@ -226,10 +226,20 @@ cd metabase && docker-compose ps
 
 配置文件 `bill_converter/config.py` 包含以下设置：
 - 账单文件路径配置
-- 资产文件路径配置
+- 资产文件路径配置（raw_assets）
 - 输出文件路径配置
 - 需要过滤的交易类型
 - 需要识别的收入类型
+
+## 项目配置信息
+
+项目配置信息包括：
+1. 新增了[DEFAULT_ASSETS_DIR](file:///Users/laplacetong/My-billing/bill_converter/config.py#L32-L32)配置项，定义了默认资产输入目录为【raw_assets】
+2. 创建了【raw_assets】目录用于存放资产信息文件
+3. 资产转换脚本将转换后的文件保存到`out/assets`目录下
+4. Metabase导入脚本现在支持将资产数据导入到`assets_records`表
+5. 项目中应避免使用硬编码的绝对路径，以防止泄露本机文件目录结构
+6. 主程序中的原始账单目录和输出目录应使用相对路径配置，确保项目的通用性和安全性
 
 ## Metabase 集成
 
