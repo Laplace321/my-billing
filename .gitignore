@@ -292,3 +292,12 @@ sample_data/
 原始账单/
 原始资产/
 !原始资产/.gitkeep
+
+
+# output
+output/
+
+# 文档
+progress_manage.md
+update_requirements_for_qwen.md
+bill_converter/utils/PRD.md
