@@ -20,7 +20,7 @@ from bank.parser import BankBillParser
 from moneypro.exporter import MoneyProExporter
 from utils.converter import BillConverter
 from utils.deduplicator import BillDeduplicator
-
+from config import Config
 
 def main():
     print("欢迎使用账单转换器！")
@@ -106,8 +106,8 @@ def auto_process_bills():
     """
     自动处理原始账单目录下的所有文件
     """
-    raw_bills_dir = "原始账单"
-    output_dir = "out"
+    raw_bills_dir = Config.DEFAULT_BILLS_DIR
+    output_dir = Config.DEFAULT_OUTPUT_DIR
     
     # 确保输出目录存在
     os.makedirs(output_dir, exist_ok=True)

@@ -24,4 +24,7 @@ class Config:
     }
     
     # 默认输出目录
-    DEFAULT_OUTPUT_DIR = 'output'
+    DEFAULT_OUTPUT_DIR = 'out'
+    
+    # 默认账单输入目录
+    DEFAULT_BILLS_DIR = '原始账单'
