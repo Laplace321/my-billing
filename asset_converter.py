@@ -10,6 +10,8 @@ import os
 import sys
 import pandas as pd
 from datetime import datetime
+import socket
+import requests
 
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -37,15 +39,22 @@ def get_exchange_rate(currency):
     # 如果forex-python可用，尝试获取实时汇率
     if FOREX_PYTHON_AVAILABLE:
         try:
+            # 设置网络超时
+            socket.setdefaulttimeout(10)
+            
             c = CurrencyRates()
             # 获取货币对人民币的汇率
             if currency == 'CNY':
                 return 1.0
             
             # 对于其他货币，获取对美元的汇率，再通过美元对人民币的汇率计算
-            rate_to_usd = c.get_rate(currency, 'USD')
-            usd_to_cny = c.get_rate('USD', 'CNY')
+            rate_to_usd = c.get_rate(currency, 'USD', timeout=10)
+            usd_to_cny = c.get_rate('USD', 'CNY', timeout=10)
             return round(rate_to_usd * usd_to_cny, 4)
+        except requests.exceptions.Timeout:
+            print(f"获取实时汇率超时，使用预设汇率")
+        except requests.exceptions.ConnectionError:
+            print(f"网络连接错误，无法获取实时汇率，使用预设汇率")
         except Exception as e:
             print(f"获取实时汇率失败: {e}，使用预设汇率")
     
@@ -107,7 +116,9 @@ def convert_assets():
             exchange_rate = get_exchange_rate(currency)
             return round(amount * exchange_rate, 2)
         
+        print("正在处理汇率转换...")
         df['对应人民币金额'] = df.apply(convert_to_cny, axis=1)
+        print("汇率转换完成")
         
         # 处理新增列：资产/负债
         def determine_asset_or_liability(account_type):
