@@ -11,8 +11,12 @@ import sys
 import pandas as pd
 import sqlite3
 
+# 获取当前脚本所在目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取项目根目录
+project_root = os.path.dirname(current_dir)
 # 添加项目根目录到 Python 路径
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 from bill_converter.config import Config
 
@@ -22,14 +26,14 @@ def import_csv_to_sqlite():
     将 CSV 文件导入到 SQLite 数据库
     """
     # 确保 metabase/data 目录存在
-    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+    data_dir = os.path.join(current_dir, 'data')
     os.makedirs(data_dir, exist_ok=True)
     
     # SQLite 数据库文件路径
     db_path = os.path.join(data_dir, 'billing.db')
     
-    # CSV 文件路径
-    csv_path = os.path.join(Config.DEFAULT_OUTPUT_DIR, 'final_merged_bills.csv')
+    # CSV 文件路径（相对于项目根目录）
+    csv_path = os.path.join(project_root, Config.DEFAULT_OUTPUT_DIR, 'final_merged_bills.csv')
     
     # 检查 CSV 文件是否存在
     if not os.path.exists(csv_path):

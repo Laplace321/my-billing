@@ -70,6 +70,53 @@ metabase/                   # Metabase集成目录
 
 ## 使用说明
 
+### 方法一：分步执行（推荐用于调试和学习）
+
+1. **处理账单文件**
+   ```bash
+   python bill_converter/main.py --auto
+   ```
+
+2. **导入数据到Metabase**
+   ```bash
+   cd metabase && python import_data.py
+   ```
+
+3. **启动Metabase服务**
+   ```bash
+   cd metabase && docker-compose up -d
+   ```
+
+### 方法二：一键执行完整流程（推荐用于日常使用）
+
+使用新创建的整合脚本可以一键执行完整的账单处理流程：
+
+```bash
+python run_complete_process.py
+```
+
+该脚本会自动执行以下操作：
+1. 处理原始账单目录下的所有账单文件
+2. 将处理后的数据导入Metabase数据库
+3. 启动Metabase服务
+
+也可以使用以下选项：
+- `--no-services`: 只处理账单和导入数据，不启动服务
+- `--manual-bills`: 手动处理账单（非自动模式）
+
+访问地址：https://billing.local
+
+### 脚本功能说明
+
+#### run_complete_process.py
+这是新添加的一体化脚本，整合了整个账单处理流程：
+- 自动处理所有原始账单文件
+- 导入数据到Metabase数据库
+- 启动Metabase和Nginx服务
+- 显示服务状态和访问信息
+
+使用这个脚本可以大大简化操作流程，特别适合日常使用。
+
 ### 命令行使用
 
 1. 转换支付宝账单：
