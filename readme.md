@@ -97,6 +97,8 @@ out/                        # 输出目录
    pip install -r requirements.txt
    ```
 
+注意：项目现在使用 forex-python 包获取实时汇率，该包会自动安装。
+
 ## 使用说明
 
 ### 方法一：分步执行（推荐用于调试和学习）

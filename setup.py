@@ -28,6 +28,7 @@ setup(
         "openpyxl>=3.0.7",
         "PyPDF2>=1.26.0",
         "click>=8.0.0",
+        "forex-python>=1.8",
     ],
     entry_points={
         "console_scripts": [

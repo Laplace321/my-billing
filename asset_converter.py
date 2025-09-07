@@ -14,12 +14,19 @@ from datetime import datetime
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+try:
+    from forex_python.converter import CurrencyRates
+    FOREX_PYTHON_AVAILABLE = True
+except ImportError:
+    FOREX_PYTHON_AVAILABLE = False
+    print("警告: forex-python包未安装，将使用预设汇率")
+
 from bill_converter.config import Config
 
 
 def get_exchange_rate(currency):
     """
-    获取汇率（示例汇率，实际应用中应该从外部API获取实时汇率）
+    获取汇率（优先使用外部API获取实时汇率，失败时使用预设汇率）
     
     Args:
         currency: 货币代码
@@ -27,7 +34,22 @@ def get_exchange_rate(currency):
     Returns:
         对应货币到人民币的汇率
     """
-    # 示例汇率，实际应用中应该从外部API获取实时汇率
+    # 如果forex-python可用，尝试获取实时汇率
+    if FOREX_PYTHON_AVAILABLE:
+        try:
+            c = CurrencyRates()
+            # 获取货币对人民币的汇率
+            if currency == 'CNY':
+                return 1.0
+            
+            # 对于其他货币，获取对美元的汇率，再通过美元对人民币的汇率计算
+            rate_to_usd = c.get_rate(currency, 'USD')
+            usd_to_cny = c.get_rate('USD', 'CNY')
+            return round(rate_to_usd * usd_to_cny, 4)
+        except Exception as e:
+            print(f"获取实时汇率失败: {e}，使用预设汇率")
+    
+    # 预设汇率（作为备选方案）
     exchange_rates = {
         'CNY': 1.0,
         'USD': 7.2,
