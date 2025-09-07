@@ -138,6 +138,8 @@ python bill_converter/main.py
 ### 部署步骤
 
 1. 安装 Docker 和 Docker Compose（如果尚未安装）
+   - 确保系统已安装 Docker 和 Docker Compose
+   - 如果未安装，请参考 Docker 官方文档进行安装
 
 2. 运行账单转换器生成最终的合并账单文件：
    ```
@@ -154,7 +156,35 @@ python bill_converter/main.py
    cd metabase && docker-compose up -d
    ```
 
-5. 在浏览器中访问 http://localhost:8080，按照初始化向导进行设置
+5. 在浏览器中访问 http://billing.local，按照初始化向导进行设置
+
+6. 添加数据库连接：
+   - 选择"SQLite"作为数据库类型
+   - 数据库文件路径填写：`/metabase-data/billing.db`
+   - 设置数据库名称，如"billing"
+
+7. 开始数据分析和可视化
+
+### 域名配置说明
+
+为了使用域名访问 Metabase，而不是 IP 地址，系统使用 Nginx 作为反向代理。
+
+1. 默认域名为 `billing.local`
+2. 如果需要修改域名，请编辑 `metabase/nginx.conf` 文件中的 `server_name` 配置项
+3. 确保本地 DNS 或 hosts 文件中配置了域名解析：
+   - 在 Linux/Mac 系统中，编辑 `/etc/hosts` 文件
+   - 在 Windows 系统中，编辑 `C:\Windows\System32\drivers\etc\hosts` 文件
+   - 添加以下行：
+     ```
+     127.0.0.1 billing.local
+     ```
+
+### 使用说明
+
+- Metabase 服务通过域名 `billing.local` 访问
+- 账单数据存储在 SQLite 数据库中，通过 Docker 数据卷挂载实现持久化
+- 数据库文件位于项目目录的 `metabase/data/billing.db`
+- 如需更新数据，重新运行步骤 2 和 3 即可
 
 详细说明请参见 [METABASE_INTEGRATION.md](file:///Users/laplacetong/My-billing/METABASE_INTEGRATION.md) 文件。
 
