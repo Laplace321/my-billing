@@ -165,3 +165,7 @@ output/
 # Metabase data
 metabase/data/
 metabase/metabase.db
+
+# Sample and raw bill data
+sample_data/
+原始账单/
