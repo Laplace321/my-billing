@@ -166,6 +166,9 @@ output/
 metabase/data/
 metabase/metabase.db
 
+# Metabase SSL certificates
+metabase/ssl/
+
 # Sample and raw bill data
 sample_data/
 原始账单/
