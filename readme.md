@@ -187,13 +187,12 @@ python bill_converter/main.py
 2. 所有HTTP请求会自动重定向到HTTPS
 3. 默认通过HTTPS访问：https://billing.local
 
-注意：由于使用的是自签名证书，浏览器可能会显示安全警告。这是正常的，可以选择继续访问或者导入证书到系统信任库中。
+注意：由于使用的是自签名证书，浏览器可能会显示安全警告。这是正常的，可以选择继续访问。
 
 为了消除浏览器的安全警告，建议使用由受信任的证书颁发机构签发的证书。对于本地开发环境，可以使用以下方法之一：
 
-1. 手动信任自签名证书（参考[METABASE_INTEGRATION.md](file:///Users/laplacetong/My-billing/METABASE_INTEGRATION.md)中的说明）
-2. 使用像nip.io或sslip.io这样的服务获得基于IP的公共域名
-3. 使用Let's Encrypt获取免费的受信任SSL证书（需要公共域名）
+1. 使用像nip.io或sslip.io这样的服务获得基于IP的公共域名
+2. 使用Let's Encrypt获取免费的受信任SSL证书（需要公共域名）
 
 ### 使用说明
 
