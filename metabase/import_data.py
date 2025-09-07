@@ -22,9 +22,26 @@ sys.path.insert(0, project_root)
 from bill_converter.config import Config
 
 
+def generate_bill_key(row):
+    """
+    生成账单的主键
+    主键由金额+日期+目标账户+源账户+描述决定
+    """
+    # 处理可能的 NaN 值
+    amount = str(row.get('金额', '') or '')
+    date = str(row.get('日期', '') or '')
+    target_account = str(row.get('目标账户', '') or '')
+    source_account = str(row.get('源账户', '') or '')
+    description = str(row.get('描述', '') or '')
+    
+    # 组合主键字段
+    key = f"{amount}_{date}_{target_account}_{source_account}_{description}"
+    return key
+
+
 def import_csv_to_sqlite():
     """
-    将 CSV 文件导入到 SQLite 数据库
+    将 CSV 文件导入到 SQLite 数据库，支持增量追加去重写入
     """
     # 确保 metabase/data 目录存在
     data_dir = os.path.join(current_dir, 'data')
@@ -48,6 +65,9 @@ def import_csv_to_sqlite():
         print(f"正在读取 CSV 文件: {csv_path}")
         df = pd.read_csv(csv_path)
         
+        # 添加主键列
+        df['账单主键'] = df.apply(generate_bill_key, axis=1)
+        
         # 处理列名，确保符合 SQLite 要求
         # 将列名中的特殊字符替换为下划线
         df.columns = [col.replace(' ', '_').replace('-', '_').replace('/', '_') for col in df.columns]
@@ -59,10 +79,39 @@ def import_csv_to_sqlite():
         print(f"正在连接到数据库: {db_path}")
         conn = sqlite3.connect(db_path)
         
-        # 将数据导入到 SQLite 数据库
-        table_name = 'billing_records'
-        print(f"正在导入数据到表: {table_name}")
-        df.to_sql(table_name, conn, if_exists='replace', index=False)
+        # 检查表是否存在
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='billing_records'
+        """)
+        table_exists = cursor.fetchone() is not None
+        
+        if table_exists:
+            # 表已存在，执行增量更新
+            print("检测到现有账单数据，执行增量更新...")
+            
+            # 读取现有数据
+            existing_df = pd.read_sql_query("SELECT * FROM billing_records", conn)
+            
+            if not existing_df.empty:
+                # 合并新旧数据，去重
+                merged_df = pd.concat([existing_df, df])
+                # 基于账单主键去重，保留最新的记录
+                merged_df = merged_df.drop_duplicates(subset=['账单主键'], keep='last')
+                print(f"去重前记录数: {len(merged_df)}")
+            else:
+                merged_df = df
+            
+            # 更新数据表
+            print(f"正在更新数据到表: billing_records")
+            merged_df.to_sql('billing_records', conn, if_exists='replace', index=False)
+            print(f"更新后记录数: {len(merged_df)}")
+        else:
+            # 表不存在，直接写入
+            print(f"创建新表并导入数据到表: billing_records")
+            df.to_sql('billing_records', conn, if_exists='replace', index=False)
+            print(f"导入记录数: {len(df)}")
         
         # 提交事务并关闭连接
         conn.commit()
@@ -70,8 +119,7 @@ def import_csv_to_sqlite():
         
         print("账单数据导入完成!")
         print(f"数据库路径: {db_path}")
-        print(f"表名: {table_name}")
-        print(f"记录数: {len(df)}")
+        print(f"表名: billing_records")
         
         return True
         
