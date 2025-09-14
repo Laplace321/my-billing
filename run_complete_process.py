@@ -10,13 +10,14 @@ import sys
 import os
 import subprocess
 import argparse
+import threading
+import time
 
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from bill_converter.main import auto_process_bills
 from metabase.import_data import import_csv_to_sqlite, import_assets_to_sqlite
-
 
 def run_docker_compose_command(command):
     """
@@ -48,6 +49,23 @@ def run_docker_compose_command(command):
         print(f"执行命令时出错: {e}")
         return False
 
+def start_asset_api_service():
+    """
+    启动资产管理API服务
+    """
+    try:
+        print("启动资产管理API服务...")
+        # 切换到项目根目录并运行资产API服务
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        result = subprocess.Popen(
+            ['python', 'asset_api.py'], 
+            cwd=project_root
+        )
+        print("资产管理API服务已启动")
+        return result
+    except Exception as e:
+        print(f"启动资产管理API服务时出错: {e}")
+        return None
 
 def complete_process(auto_mode=True, start_services=True):
     """
@@ -56,10 +74,11 @@ def complete_process(auto_mode=True, start_services=True):
     2. 处理原始资产文件
     3. 导入数据到Metabase
     4. 启动Metabase服务
+    5. 启动资产管理API服务
     
     Args:
         auto_mode (bool): 是否使用自动模式处理账单
-        start_services (bool): 是否启动Metabase服务
+        start_services (bool): 是否启动服务
     """
     print("=" * 50)
     print("开始执行完整账单处理流程")
@@ -130,24 +149,29 @@ def complete_process(auto_mode=True, start_services=True):
         print(f"导入数据时出错: {e}")
         return False
     
-    # 步骤4: 启动Metabase服务
+    # 步骤4: 启动服务
     if start_services:
-        print("\n步骤4: 启动Metabase服务")
+        print("\n步骤4: 启动服务")
         print("-" * 30)
         
         # 停止可能正在运行的服务
         print("停止可能正在运行的服务...")
         run_docker_compose_command(['docker-compose', 'down'])
         
-        # 启动服务
+        # 启动资产管理API服务
+        print("启动资产管理API服务...")
+        asset_api_process = start_asset_api_service()
+        
+        # 启动Metabase服务
         print("启动Metabase服务...")
         if not run_docker_compose_command(['docker-compose', 'up', '-d']):
             print("启动服务失败")
             return False
         
-        print("Metabase服务已启动")
+        print("所有服务已启动")
         print("\n服务访问信息:")
         print("- Metabase Web界面: https://billing.local")
+        print("- 资产管理系统界面: https://billing.local/assets/")
         print("- 数据库文件路径(容器内): /metabase-data/billing.db")
         
         # 显示服务状态
@@ -160,14 +184,13 @@ def complete_process(auto_mode=True, start_services=True):
     
     return True
 
-
 def main():
     """
     主函数
     """
     parser = argparse.ArgumentParser(description='完整账单处理流程')
     parser.add_argument('--no-services', action='store_true', 
-                        help='不启动Metabase服务')
+                        help='不启动服务')
     parser.add_argument('--manual-bills', action='store_true',
                         help='手动处理账单（非自动模式）')
     
@@ -182,7 +205,9 @@ def main():
     if success:
         print("\n✅ 所有步骤执行成功!")
         if not args.no_services:
-            print("现在可以通过 https://billing.local 访问Metabase")
+            print("现在可以通过以下地址访问服务:")
+            print("- Metabase: https://billing.local")
+            print("- 资产管理系统: https://billing.local/assets/")
     else:
         print("\n❌ 执行过程中出现错误!")
         sys.exit(1)

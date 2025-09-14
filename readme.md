@@ -12,6 +12,7 @@
 4. 投资类交易过滤
 5. 工资和公积金收入自动识别
 6. 资产记录功能，支持导出当前资产快照信息
+7. 资产管理可视化界面，提供Web界面管理资产信息
 
 ## 功能特点
 
@@ -21,9 +22,10 @@
 4. **投资类交易过滤**: 过滤掉投资类交易
 5. **收入自动识别**: 自动识别工资和公积金收入
 6. **资产记录**: 支持导出当前资产快照信息
-7. **增量数据导入**: SQLite数据库支持账单数据的增量导入和去重，避免重复数据的同时保留历史记录
-8. **智能去重**: 基于金额、日期、源账户、描述、代理信息生成唯一主键，确保相同交易不会重复导入
-9. **日期处理**: 正确处理和保留账单中的完整日期时间信息
+7. **资产管理可视化**: 提供Web界面管理资产信息
+8. **增量数据导入**: SQLite数据库支持账单数据的增量导入和去重，避免重复数据的同时保留历史记录
+9. **智能去重**: 基于金额、日期、源账户、描述、代理信息生成唯一主键，确保相同交易不会重复导入
+10. **日期处理**: 正确处理和保留账单中的完整日期时间信息
 
 ## 项目结构
 
@@ -75,6 +77,14 @@ out/                        # 输出目录
 ├── final_merged_bills.csv  # 最终合并去重后的文件
 └── assets/                 # 资产信息输出目录
     └── 20250904_asset.csv  # 资产信息转换结果（带时间戳）
+
+src/                        # 资产管理可视化界面前端代码
+├── components/             # React组件
+├── types/                  # TypeScript类型定义
+├── utils/                  # 工具函数
+├── services/               # 数据服务
+├── App.tsx                 # 主应用组件
+└── main.tsx                # 入口文件
 ```
 
 ## 安装说明
@@ -92,9 +102,14 @@ out/                        # 输出目录
    # 或 venv\Scripts\activate  # Windows
    ```
 
-3. 安装依赖：
+3. 安装Python依赖：
    ```
    pip install -r requirements.txt
+   ```
+
+4. 安装前端依赖（用于资产管理可视化界面）：
+   ```
+   npm install
    ```
 
 注意：项目现在使用 forex-python 包获取实时汇率，该包会自动安装。
@@ -118,9 +133,19 @@ out/                        # 输出目录
    cd metabase && python import_data.py
    ```
 
-4. **启动Metabase服务**
+4. **构建资产管理界面前端**
+   ```bash
+   npm run build
+   ```
+
+5. **启动Metabase服务**
    ```bash
    cd metabase && docker-compose up -d
+   ```
+
+6. **启动资产管理API服务**
+   ```bash
+   python asset_api.py &
    ```
 
 ### 方法二：一键执行完整流程（推荐用于日常使用）
@@ -135,13 +160,16 @@ python run_complete_process.py
 1. 处理raw_bills目录下的所有账单文件
 2. 处理raw_assets目录下的资产信息文件
 3. 将处理后的数据导入Metabase数据库
-4. 启动Metabase服务
+4. 构建资产管理界面前端
+5. 启动Metabase服务和资产管理界面服务
 
 也可以使用以下选项：
 - `--no-services`: 只处理账单和导入数据，不启动服务
 - `--manual-bills`: 手动处理账单（非自动模式）
 
-访问地址：https://billing.local
+访问地址：
+- Metabase数据分析界面: https://billing.local
+- 资产管理可视化界面: https://billing.local/assets/
 
 ### 容器服务管理
 
@@ -192,7 +220,9 @@ cd metabase && docker-compose ps
 - 自动处理所有原始账单文件
 - 自动处理原始资产目录下的资产信息文件
 - 导入数据到Metabase数据库
+- 构建资产管理界面前端
 - 启动Metabase和Nginx服务
+- 启动资产管理界面服务
 - 显示服务状态和访问信息
 
 使用这个脚本可以大大简化操作流程，特别适合日常使用。
@@ -261,19 +291,24 @@ cd metabase && docker-compose ps
    python metabase/import_data.py
    ```
 
-4. 启动 Metabase：
+4. 构建资产管理界面前端：
+   ```
+   npm run build
+   ```
+
+5. 启动 Metabase：
    ```
    cd metabase && docker-compose up -d
    ```
 
-5. 在浏览器中访问 https://billing.local，按照初始化向导进行设置
+6. 在浏览器中访问 https://billing.local，按照初始化向导进行设置
 
-6. 添加数据库连接：
+7. 添加数据库连接：
    - 选择"SQLite"作为数据库类型
    - 数据库文件路径填写：`/metabase-data/billing.db`
    - 设置数据库名称，如"billing"
 
-7. 开始数据分析和可视化
+8. 开始数据分析和可视化
 
 ### 数据库维护
 
@@ -329,6 +364,47 @@ DELETE FROM billing_records WHERE 类别 IN ('测试类别', '新增类别');
 
 详细说明请参见 [METABASE_INTEGRATION.md](file:///Users/laplacetong/My-billing/METABASE_INTEGRATION.md) 文件。
 
-## 问题排查
+## 资产管理可视化界面
 
-```
+本项目新增了资产管理可视化界面，提供Web界面来管理和更新资产信息。
+
+### 功能特性
+
+- 查看资产列表
+- 添加新资产
+- 编辑现有资产
+- 删除资产
+- 自动计算对应人民币金额
+- 自动判断资产/负债属性
+
+### 技术栈
+
+- 前端：React + TypeScript + Vite
+- 后端：Python HTTP服务器
+- 数据存储：与Metabase共享的SQLite数据库
+- 部署：Docker + Nginx
+
+### 访问地址
+
+- 资产管理系统界面: https://billing.local/assets/
+- 资产管理API接口: https://billing.local/api/assets
+
+### API接口
+
+- `GET /api/assets` - 获取所有资产
+- `POST /api/assets` - 添加新资产
+- `PUT /api/assets/:id` - 更新资产
+- `DELETE /api/assets/:id` - 删除资产
+
+### 数据格式
+
+资产数据包含以下字段：
+- 账户分类：支付账户、信用卡、其他资产
+- 币种：CNY、USD、EUR等
+- 金额：数值
+- 描述：文本描述
+- 时间：ISO时间戳
+- 对应人民币金额：自动计算
+- 资产/负债：自动判断
+
+## 问题排查

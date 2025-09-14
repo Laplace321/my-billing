@@ -19,11 +19,15 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
+      - ../dist:/app/dist
     depends_on:
       - metabase
     restart: unless-stopped
     networks:
       - metabase-network
+    extra_hosts:
+      - "billing.local:host-gateway"
+      - "host.docker.internal:host-gateway"
 
 networks:
   metabase-network:

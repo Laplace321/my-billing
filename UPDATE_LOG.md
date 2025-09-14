@@ -1,4 +1,46 @@
 # 更新日志
+<!-- 增加qwen角色切换脚本：
+#!/bin/bash
+# iflow-role: 多角色启动 iFlow CLI
+# 使用 IFLOW.md 管理角色 prompt
+
+ROLE=$1
+if [ -z "$ROLE" ]; then
+  ROLE="default"
+fi
+
+# 找 IFLOW.md 文件
+if [ -f "./IFLOW.md" ]; then
+  ROLE_FILE="./IFLOW.md"
+else
+  echo "❌ 未找到 IFLOW.md 文件"
+  exit 1
+fi
+
+# 提取对应角色内容
+PROMPT=$(awk "/\\[$ROLE\\]/{flag=1;next}/\\[/{flag=0}flag" $ROLE_FILE)
+
+if [ -z "$PROMPT" ]; then
+  echo "❌ 未找到角色 [$ROLE]，请检查 IFLOW.md"
+  exit 1
+fi
+
+# 使用虚拟环境下的 iflow 优先，否则使用系统 PATH
+if [ -x "./venv/bin/iflow" ]; then
+  CMD="./venv/bin/iflow"
+else
+  CMD="iflow"
+fi
+
+echo "✅ 启动 iFlow CLI，角色：[$ROLE]"
+
+# 使用 -i / --prompt-interactive 将角色 prompt 作为初始上下文
+$CMD -i "$PROMPT" -->
+
+
+
+
+
 
 ## 2025-09-08
 
